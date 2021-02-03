@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block body %}
+    <section>
+        <h1>Take a look at the instruments in our store</h1>
+
+        <h3></h3>
+        {% if instruments %}
+            <ul>
+            {% for instrument in instruments %}
+            <li><a href="/instruments/show/{{instrument['ref_num']}}"><img src="{{instrument['url']}}" width="150"/></a> {{instrument["name"]}} <a href="cart/add/{{instrument['ref_num']}}">Add to cart!</a></li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    </section>
+
+{% endblock %}
