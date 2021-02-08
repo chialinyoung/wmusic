@@ -31,14 +31,17 @@ class UserComment(database_class.Database):
         #     matches = word_pattern.findall(sentence)
         #     for match in matches:
         #         words.append(match)
+        import nltk
         from nltk.tokenize import word_tokenize
         from nltk.corpus import stopwords
         from nltk.sentiment import SentimentIntensityAnalyzer
-        #nltk.download('punkt')
-        #nltk.download('vader_lexicon')
-        stop_words = set(stop_words('english'))
+        stop_words = set(stopwords.words('english'))
         tokens = word_tokenize(self.contents)
-        filtered_tokens = [w for w in tokens if w not in stop_words]
+        #filtered_tokens = [w for w in tokens if w not in stop_words]
+        filtered_tokens =''
+        for w in tokens:
+            if w not in stop_words:
+                filtered_tokens+=f' {w}'
         analyzer = SentimentIntensityAnalyzer()
         scores = analyzer.polarity_scores(filtered_tokens)
         return scores['compound']
