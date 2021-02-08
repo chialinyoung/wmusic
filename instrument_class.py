@@ -4,7 +4,8 @@ import database_class
 #import instrument_model
 
 ## to handle incorrect reference number
-MIN_REF=10000
+MAX_REF=100000
+MIN_REF=10000 
 class MyException(Exception):
     def __init__ (self, msg=None):
         msg = f'My Error message {msg}'

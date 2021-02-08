@@ -39,8 +39,7 @@
 <header>
 
 {% if session['role'] == 'admin'%}
-    <a href="/">Go to root</a>  <a href="/cart/show/all">Go to cart</a> 
-    <br> <a href="/instruments/show/all">See all instruments</a>
+    <a href="/">Go to root</a> <a href="/instruments/show/all">Go to Admin DB</a>
 {% elif session['role'] == 'buyer' %}
     <a href="/">Go to root</a>  <a href="/cart/show/all">Go to cart</a>
 {% else %}

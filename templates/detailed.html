@@ -15,8 +15,8 @@
     {% if comments %}
         <ul>
             {% for comment in comments %}
-            <li>Comment by {{comment["username"]}} ({{comment["datetime"]}}) <br>
-                {{comment['contents']}}<br><br>
+            <li>Comment by {{comment["username"]}} ({{comment["datetime"]}})<br>
+                {{comment["contents"]}}<br><br>
             {% endfor %}
             </ul>
     {% else %}

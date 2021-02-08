@@ -53,11 +53,10 @@ def show_detail_page(ref_number):
 @app.route('/instruments/create', methods=["GET", "POST"])
 def create_instrument():
     if request.method == "POST":    
-        MAX_REF=100000
-        MIN_REF=10000
-        ref_num = random.randint(MIN_REF,MAX_REF-1)
+        
+        ref_num = random.randint(iclass.MIN_REF,iclass.MAX_REF-1)
         while iclass.Instrument.from_reference(ref_num) is not None:
-            ref_num = random.randint(MIN_REF,MAX_REF-1)
+            ref_num = random.randint(iclass.MIN_REF,iclass.MAX_REF-1)
         instrument = iclass.Instrument(ref_num, request.form['cat'],  request.form['name'], request.form['url'])
         query = f"INSERT INTO {instrument.table} VALUES ({ref_num},\"{request.form['name']}\",\"{request.form['cat']}\",\"{request.form['url']}\")"
         if instrument.add_to_db(query, ref_num):
@@ -179,6 +178,7 @@ def logout():
     session.pop('role')
     resp = redirect(url_for('welcome'))
     return resp
+
 @app.route('/greeting')
 def greeting():
     print('[DEBUG][greeting]::', session)
@@ -210,10 +210,16 @@ def comment_page(ref_number):
 @app.route('/instruments/analysis/<ref_number>')
 def comment_analysis(ref_number):
     instrument = iclass.Instrument.from_reference(ref_number)
-    res = instrument.name
     all_comments = cclass.UserComment.allcomments_by_instrument(ref_number)
-    for count, cID in enumerate(all_comments):
-        comment = cclass.UserComment.from_commentID(cID)
-        res+= f'..{count}:{comment.contents}..'
-    return render_template('messages.html', message=res)
+    instr = {'name':instrument.name, 'rating': 'no rating yet'}
+    user_comments=[]
+    if len(all_comments)>0:
+        ttl_rating = 0
+        for count, cID  in enumerate(all_comments, start=1):
+            entry = cclass.UserComment.from_commentID(cID)
+            rating = entry.rating_analysis()
+            user_comments.append({'number':count, 'username':entry.username, 'datetime':datetime.fromtimestamp(entry.time), 'contents':entry.contents, 'rating':rating})  
+            ttl_rating += rating
+        instr['rating'] = ttl_rating/len(all_comments)
         
+    return render_template('comment_analysis.html', instrument=instr, comments=user_comments)

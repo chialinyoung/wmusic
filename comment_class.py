@@ -1,13 +1,16 @@
 import sqlite3
 import database_class
+import re
 
 DB_NAME = "music_store.db"
 TABLE_NAME = "comments"
 KEY_INDEX = "commentID"
 
+comment_check = True
+
 class UserComment(database_class.Database):
     def __init__(self, commentID, instrument, username, time, contents):
-        self.commentIID = commentID
+        self.commentID = commentID
         self.username = username
         self.instrument = instrument
         self.time = time
@@ -17,6 +20,28 @@ class UserComment(database_class.Database):
         return f"Comment about {self.instrument}, by {self.username}, at {self.time}"
     def __repr__(self):
         return f"CommentID {self.commentID}: {self.contents}"
+
+    def rating_analysis(self):
+        # sentence_pattern = re.compile(r'(.*?\.)(\s|$)', re.DOTALL)
+        # matches = sentence_pattern.findall(self.contents) 
+        # sentences = [match[0] for match in matches]
+        # word_pattern = re.compile(r"([\w\-']+)([\s,.])?")  
+        # words = []
+        # for sentence in sentences:
+        #     matches = word_pattern.findall(sentence)
+        #     for match in matches:
+        #         words.append(match)
+        from nltk.tokenize import word_tokenize
+        from nltk.corpus import stopwords
+        from nltk.sentiment import SentimentIntensityAnalyzer
+        #nltk.download('punkt')
+        #nltk.download('vader_lexicon')
+        stop_words = set(stop_words('english'))
+        tokens = word_tokenize(self.contents)
+        filtered_tokens = [w for w in tokens if w not in stop_words]
+        analyzer = SentimentIntensityAnalyzer()
+        scores = analyzer.polarity_scores(filtered_tokens)
+        return scores['compound']
 
     @classmethod
     def from_commentID(cls, id):
@@ -33,6 +58,22 @@ class UserComment(database_class.Database):
     
     @classmethod
     def new_comment(cls, instrument, username, time, contents):
+        if comment_check:
+            import instrument_class as iclass
+            all_ref = iclass.Instrument.find_all_ref()
+            if int(instrument) not in all_ref:
+                return None
+            
+            import user_class as uclass
+            conn = sqlite3.connect(DB_NAME)
+            c = conn.cursor()
+            if uclass.WebUser.from_username(username) is None:
+                return None
+            
+            if re.match('\d{10}', str(time)) == None:
+                return None
+        ## end of comment check
+        
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
         query = f"INSERT INTO {TABLE_NAME} (instrument, username, datetime, contents) VALUES ({instrument}, \"{username}\", {time}, \"{contents}\")"

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block body %}
+
+    <section>
+        <h1>{{instrument["name"]}} <br>
+        Current average rating is {{instrument["rating"]}}<br>
+        <h3>Detail</h3>
+        {% if comments %}
+            <ul>
+            {% for comment in comments %}
+            <li>
+                Comment {{comment["number"]}} by {{comment["username"]}} at {{comment["datetime"]}} -- RATING {{comment["rating"]}}  <br>
+                {{comment["contents"]}}
+            {% endfor %}
+            </ul>
+        {% else %}
+            No comment yet
+        {% endif %}
+    </section>
+
+</body>
+{% endblock %}
