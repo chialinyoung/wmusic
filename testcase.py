@@ -151,6 +151,8 @@ class CommentTest (unittest.TestCase):
         self.assertEqual(entry[3], test_entry.time, f'Entry[3] {entry[3]}')
         self.assertEqual(entry[4], test_entry.contents, f'Entry[3] {entry[4]}')
         
+        #need to change comment check flag
+        cclass.comment_check = True
         tmp_instrument = random.randrange(iclass.MAX_REF*10, iclass.MAX_REF*100)
         tmp_user = "".join([random.choice(string.ascii_letters) for i in range(1000)]) 
         tmp_time = "".join([random.choice(string.ascii_letters) for i in range(1000)]) 

@@ -214,12 +214,21 @@ def comment_analysis(ref_number):
     instr = {'name':instrument.name, 'rating': 'no rating yet'}
     user_comments=[]
     if len(all_comments)>0:
-        ttl_rating = 0
+        if cclass.USE_NLTK == False:
+            good_set = set(line.strip() for line in open('good_words.txt'))
+            bad_set = set(line.strip() for line in open('bad_words.txt'))
+            stop_set = set(line.strip() for line in open('stop_words.txt'))
+        else:
+            cclass.UserComment.nltk_package_check()
+        ttl_rating = []
         for count, cID  in enumerate(all_comments, start=1):
             entry = cclass.UserComment.from_commentID(cID)
-            rating = entry.rating_analysis()
+            if cclass.USE_NLTK == True:
+                rating = entry.nltk_analysis()
+            else:
+                rating = entry.rating_analysis(good_set, bad_set, stop_set)
             user_comments.append({'number':count, 'username':entry.username, 'datetime':datetime.fromtimestamp(entry.time), 'contents':entry.contents, 'rating':rating})  
-            ttl_rating += rating
-        instr['rating'] = ttl_rating/len(all_comments)
+            ttl_rating.append(rating)
+        instr['rating'] = round(sum(ttl_rating)/len(ttl_rating),4)
         
     return render_template('comment_analysis.html', instrument=instr, comments=user_comments)

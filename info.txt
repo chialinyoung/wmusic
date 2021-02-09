@@ -1,3 +1,6 @@
+env start
+source env/bin/activate
+
 kill PID on Mac
 1. lsof -i tcp:5000
 2. kill -9 PID

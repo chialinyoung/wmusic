@@ -2,11 +2,37 @@ import sqlite3
 import database_class
 import re
 
+comment_check = False
+USE_NLTK = True
+
 DB_NAME = "music_store.db"
 TABLE_NAME = "comments"
 KEY_INDEX = "commentID"
 
-comment_check = True
+
+if USE_NLTK:
+    import nltk
+    from nltk.tokenize import word_tokenize
+    from nltk.corpus import stopwords
+    from nltk.sentiment import SentimentIntensityAnalyzer
+
+def absolute_sentiment(p, n, t):
+    if t==0:
+        return 0
+    else:
+        return (p-n)/t
+
+def test_sentiment(p, n, t):
+    return round(absolute_sentiment(p, n, t),4)
+
+def content_check (text):
+    if text:
+        filtered_text = re.sub('<[^<]+?>', '', text)
+        if filtered_text[-1] not in ['.','?','!']:
+            filtered_text += '.' 
+        return filtered_text
+    else:   
+        return text
 
 class UserComment(database_class.Database):
     def __init__(self, commentID, instrument, username, time, contents):
@@ -21,30 +47,28 @@ class UserComment(database_class.Database):
     def __repr__(self):
         return f"CommentID {self.commentID}: {self.contents}"
 
-    def rating_analysis(self):
-        # sentence_pattern = re.compile(r'(.*?\.)(\s|$)', re.DOTALL)
-        # matches = sentence_pattern.findall(self.contents) 
-        # sentences = [match[0] for match in matches]
-        # word_pattern = re.compile(r"([\w\-']+)([\s,.])?")  
-        # words = []
-        # for sentence in sentences:
-        #     matches = word_pattern.findall(sentence)
-        #     for match in matches:
-        #         words.append(match)
-        import nltk
-        from nltk.tokenize import word_tokenize
-        from nltk.corpus import stopwords
-        from nltk.sentiment import SentimentIntensityAnalyzer
+    def rating_analysis(self, good_set, bad_set, stop_set):
+        ### sentence_pattern = re.compile(r'(.*?\.)(\s|$)', re.DOTALL)
+        ### matches = sentence_pattern.findall(self.contents) 
+        ### sentences = [match[0] for match in matches]
+        word_pattern = re.compile(r"([\w\-']+)([\s,.])?")  
+        matches = word_pattern.findall(self.contents)
+        filtered_words = [match[0] for match in matches if match[0] not in stop_set]
+        num_total = len(filtered_words)
+        good_words = good_set.intersection(filtered_words)
+        bad_words = bad_set.intersection(filtered_words)
+        num_good = len(good_words)
+        num_bad = len(bad_words)
+        return test_sentiment(num_good, num_bad, num_total)
+        
+    def nltk_analysis(self):        
         stop_words = set(stopwords.words('english'))
-        tokens = word_tokenize(self.contents)
-        #filtered_tokens = [w for w in tokens if w not in stop_words]
-        filtered_tokens =''
-        for w in tokens:
-            if w not in stop_words:
-                filtered_tokens+=f' {w}'
-        analyzer = SentimentIntensityAnalyzer()
-        scores = analyzer.polarity_scores(filtered_tokens)
+        token_words = set(word_tokenize(self.contents))
+        filtered_words = token_words - stop_words
+        filtered_string = " ".join(filtered_words)
+        scores = SentimentIntensityAnalyzer().polarity_scores(filtered_string)
         return scores['compound']
+        
 
     @classmethod
     def from_commentID(cls, id):
@@ -77,9 +101,10 @@ class UserComment(database_class.Database):
                 return None
         ## end of comment check
         
+        filtered_contents = content_check(contents)
         conn = sqlite3.connect(DB_NAME)
         c = conn.cursor()
-        query = f"INSERT INTO {TABLE_NAME} (instrument, username, datetime, contents) VALUES ({instrument}, \"{username}\", {time}, \"{contents}\")"
+        query = f"INSERT INTO {TABLE_NAME} (instrument, username, datetime, contents) VALUES ({instrument}, \"{username}\", {time}, \"{filtered_contents}\")"
         c.execute(query)
         if c.rowcount == 1:
             new_ID = c.lastrowid
@@ -100,3 +125,18 @@ class UserComment(database_class.Database):
         conn.close()
         return all_ids
     
+    @staticmethod
+    def nltk_package_check():
+        try:
+            nltk.data.find('tokenizers/punkt')
+        except LookupError:
+            nltk.download('punkt') 
+        try:
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('stopwords') 
+        try:
+            nltk.data.find('sentiment/vader_lexicon.zip')
+            ## vader_lexicon needs zip??
+        except LookupError:
+            nltk.download('vader_lexicon') 
