@@ -9,7 +9,6 @@ DB_NAME = "music_store.db"
 TABLE_NAME = "comments"
 KEY_INDEX = "commentID"
 
-
 if USE_NLTK:
     import nltk
     from nltk.tokenize import word_tokenize
@@ -69,7 +68,6 @@ class UserComment(database_class.Database):
         scores = SentimentIntensityAnalyzer().polarity_scores(filtered_string)
         return scores['compound']
         
-
     @classmethod
     def from_commentID(cls, id):
         conn = sqlite3.connect(DB_NAME)
@@ -110,7 +108,7 @@ class UserComment(database_class.Database):
             new_ID = c.lastrowid
             conn.commit()
             conn.close()
-            return cls(new_ID, instrument, username, time, contents)
+            return cls(new_ID, instrument, username, time, filtered_contents)
         else:
             conn.close()
             return None    
@@ -127,6 +125,15 @@ class UserComment(database_class.Database):
     
     @staticmethod
     def nltk_package_check():
+        
+        import ssl ## nltk downloader may be broker; if so, fix SSL first
+        try:
+            _create_unverified_https_context = ssl._create_unverified_context
+        except AttributeError:
+            pass
+        else:
+            ssl._create_default_https_context = _create_unverified_https_context
+            
         try:
             nltk.data.find('tokenizers/punkt')
         except LookupError:
